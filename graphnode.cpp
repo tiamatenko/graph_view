@@ -1,12 +1,12 @@
-#include "graphobject.h"
+#include "graphnode.h"
 
-GraphObject::GraphObject(const QPointF &coords, const QString &name, QObject *parent)
+GraphNode::GraphNode(const QPointF &coords, const QString &name, QObject *parent)
     : GraphGenericObject(name, parent), m_coords(coords)
 {
 
 }
 
-void GraphObject::addOutputPort(const QString &name)
+void GraphNode::addOutputPort(const QString &name)
 {
     if (m_outputPorts.contains(name)) {
         emit errorOccurred(tr("Output port with name '%1' already exists").arg(name));
@@ -18,7 +18,7 @@ void GraphObject::addOutputPort(const QString &name)
     emit outputPortsChanged();
 }
 
-void GraphObject::removeOutputPort(const QString &name)
+void GraphNode::removeOutputPort(const QString &name)
 {
     auto it = m_outputPorts.find(name);
     if (it == m_outputPorts.end()) {
@@ -31,7 +31,7 @@ void GraphObject::removeOutputPort(const QString &name)
     obj->deleteLater();
 }
 
-void GraphObject::addInputPort(const QString &name)
+void GraphNode::addInputPort(const QString &name)
 {
     if (m_inputPorts.contains(name)) {
         emit errorOccurred(tr("Input port with name '%1' already exists").arg(name));
@@ -43,7 +43,7 @@ void GraphObject::addInputPort(const QString &name)
     emit inputPortsChanged();
 }
 
-void GraphObject::removeInputPort(const QString &name)
+void GraphNode::removeInputPort(const QString &name)
 {
     auto it = m_inputPorts.find(name);
     if (it == m_inputPorts.end()) {

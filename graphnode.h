@@ -5,7 +5,7 @@
 #include <QHash>
 #include <QPointF>
 
-class GraphObject : public GraphGenericObject
+class GraphNode : public GraphGenericObject
 {
     Q_OBJECT
     Q_PROPERTY(qreal xCoord READ xCoord WRITE setXCoord)
@@ -14,7 +14,7 @@ class GraphObject : public GraphGenericObject
     Q_PROPERTY(QObjectList inputPorts READ inputPorts NOTIFY inputPortsChanged)
 
 public:
-    explicit GraphObject(const QPointF &coords, const QString &name, QObject *parent);
+    explicit GraphNode(const QPointF &coords, const QString &name, QObject *parent);
 
     inline QPointF coords() const { return m_coords; }
     inline qreal xCoord() const { return m_coords.x(); }

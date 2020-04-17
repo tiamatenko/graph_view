@@ -16,7 +16,8 @@ DEFINES += QT_DEPRECATED_WARNINGS
 SOURCES += \
         graphcore.cpp \
         graphgenericobject.cpp \
-        graphobject.cpp \
+        graphnode.cpp \
+        graphnodeport.cpp \
         main.cpp
 
 RESOURCES += qml.qrc
@@ -35,6 +36,7 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 HEADERS += \
     graphcore.h \
     graphgenericobject.h \
-    graphobject.h
+    graphnode.h \
+    graphnodeport.h
 
 OTHER_FILES += main.qml
