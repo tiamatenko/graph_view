@@ -8,25 +8,25 @@ class GraphCore : public QObject
 {
     Q_OBJECT
     Q_PROPERTY(QString sourceFileName READ sourceFileName NOTIFY sourceFileNameChanged)
-    Q_PROPERTY(QObjectList graphObjects READ graphObjects NOTIFY graphObjectsChanged)
-    Q_PROPERTY(QObjectList graphConnections READ graphConnections NOTIFY graphConnectionsChanged)
+    Q_PROPERTY(QObjectList graphNodes READ graphNodes NOTIFY graphChanged)
+    Q_PROPERTY(QObjectList graphConnections READ graphConnections NOTIFY graphChanged)
     Q_PROPERTY(double zoomFactor READ zoomFactor WRITE setZoomFactor)
 
 public:
     explicit GraphCore(QObject *parent = nullptr);
 
     inline QString sourceFileName() const { return m_sourceFileName; }
-    inline double zoomFactor() const { return m_zoomFactor; }
-    inline QObjectList graphObjects() const { return m_graphObjects.values(); }
+    inline QObjectList graphNodes() const { return m_graphNodes.values(); }
     inline QObjectList graphConnections() const { return m_graphConnections.values(); }
+    inline double zoomFactor() const { return m_zoomFactor; }
 
 public slots:
     void save() const;
     void saveAs(const QString &fileName);
     void load(const QString &fileName);
 
-    void addGraphObject(const QString &name);
-    void removeGraphObject(const QString &name);
+    void addGraphNode(const QPointF &coord, const QString &name);
+    void removeGraphNode(const QString &name);
 
     void addGraphConnection(const QString &src, const QString &out, const QString &dest, const QString &in);
     void removeGraphConnection(const QString &name);
@@ -35,8 +35,7 @@ public slots:
 
 signals:
     void sourceFileNameChanged(const QString &sourceFileName);
-    void graphObjectsChanged();
-    void graphConnectionsChanged();
+    void graphChanged();
     void errorOccurred(const QString &error);
 
     void zoomFactorChanged(double zoomFactor);
@@ -46,7 +45,7 @@ protected:
 
 private:
     QString m_sourceFileName;
-    QHash<QString, QObject*> m_graphObjects;
-    QHash<QString, QObject*> m_graphConnections;
+    QHash<QString, QObject *> m_graphNodes;
+    QHash<QString, QObject *> m_graphConnections;
     double m_zoomFactor = 1.0;
 };

@@ -2,6 +2,8 @@
 
 #include "graphgenericobject.h"
 
+#include <QPointer>
+
 class GraphNodePort;
 
 class GraphConnection : public GraphGenericObject
@@ -13,13 +15,13 @@ class GraphConnection : public GraphGenericObject
 public:
     explicit GraphConnection(GraphNodePort *outPort, GraphNodePort *inPort, const QString &name, QObject *parent);
 
-    inline GraphNodePort *outputPort() const { return m_outputPort; }
-    inline GraphNodePort *inputPort() const { return m_inputPort; }
+    GraphNodePort *outputPort() const;
+    GraphNodePort *inputPort() const;
 
 signals:
 
 private:
-    GraphNodePort *m_outputPort;
-    GraphNodePort *m_inputPort;
+    QPointer<GraphNodePort> m_outputPort;
+    QPointer<GraphNodePort> m_inputPort;
 };
 

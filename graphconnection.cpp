@@ -9,3 +9,13 @@ GraphConnection::GraphConnection(GraphNodePort *outPort, GraphNodePort *inPort, 
 {
     m_color = outPort->color();
 }
+
+GraphNodePort *GraphConnection::outputPort() const
+{
+    return m_outputPort;
+}
+
+GraphNodePort *GraphConnection::inputPort() const
+{
+    return m_inputPort;
+}

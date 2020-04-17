@@ -1,4 +1,7 @@
+#include "graphconnection.h"
 #include "graphcore.h"
+#include "graphcore.h"
+#include "graphnode.h"
 
 
 /**
@@ -52,56 +55,80 @@ void GraphCore::load(const QString &fileName)
 }
 
 /**
- * @brief GraphCore::addGraphObject creates a new object
- * @param name of a new object
+ * @brief GraphCore::addGraphNode creates a new node
+ * @param name of a new node
  */
-void GraphCore::addGraphObject(const QString &name)
+void GraphCore::addGraphNode(const QPointF &coord, const QString &name)
 {
-    if (m_graphObjects.contains(name)) {
-        emit errorOccurred(tr("Graph object with name '%1' already exists").arg(name));
+    if (m_graphNodes.contains(name)) {
+        emit errorOccurred(tr("Graph node '%1' already exists").arg(name));
         return;
     }
-    QObject *obj = new QObject(this);  // TODO
-    obj->setObjectName(name);
-    m_graphObjects[name] = obj;
-    emit graphObjectsChanged();
+    GraphNode *node = new GraphNode(coord, name, this);
+    m_graphNodes[name] = node;
+
+    connect(node, &GraphNode::outputPortsChanged, this, &GraphCore::graphChanged);
+    connect(node, &GraphNode::inputPortsChanged, this, &GraphCore::graphChanged);
+    connect(node, &GraphNode::errorOccurred, this, &GraphCore::errorOccurred);
+    emit graphChanged();
 }
 
 /**
- * @brief GraphCore::removeGraphObject removes object
- * @param name of removed object
+ * @brief GraphCore::removeGraphNode removes node
+ * @param name of removed node
  */
-void GraphCore::removeGraphObject(const QString &name)
+void GraphCore::removeGraphNode(const QString &name)
 {
-    auto it = m_graphObjects.find(name);
-    if (it == m_graphObjects.end()) {
-        emit errorOccurred(tr("Graph object with name '%1' does not exist").arg(name));
+    auto it = m_graphNodes.find(name);
+    if (it == m_graphNodes.end()) {
+        emit errorOccurred(tr("Graph node '%1' does not exist").arg(name));
         return;
     }
-    QObject *obj = it.value();
-    m_graphObjects.erase(it);
-    emit graphObjectsChanged();
-    obj->deleteLater();
+    QObject *node = it.value();
+    m_graphNodes.erase(it);
+    emit graphChanged();
+    node->deleteLater();
 }
 
 /**
  * @brief GraphCore::addGraphConnection creates a new connection
- * @param src name of the source object
- * @param out output port name of the source object
- * @param dest name of the destination object
- * @param in input port name of the destination object
+ * @param src name of the source node
+ * @param out output port name of the source node
+ * @param dest name of the destination node
+ * @param in input port name of the destination node
  */
 void GraphCore::addGraphConnection(const QString &src, const QString &out, const QString &dest, const QString &in)
 {
     const QString name = QString(QLatin1String("%1.%2->%3.%4")).arg(src, out, dest, in);
     if (m_graphConnections.contains(name)) {
-        emit errorOccurred(tr("Connection %1 already exists").arg(name));
+        emit errorOccurred(tr("Connection '%1' already exists").arg(name));
         return;
     }
-    QObject *obj = new QObject(this);   // TODO
-    obj->setObjectName(name);
-    m_graphConnections[name] = obj;
-    emit graphConnectionsChanged();
+    GraphNode *sourceNode = qobject_cast<GraphNode *>(m_graphNodes.value(src));
+    if (!sourceNode) {
+        emit errorOccurred(tr("Unable to find '%1' node").arg(src));
+        return;
+    }
+    GraphNode *destNode = qobject_cast<GraphNode *>(m_graphNodes.value(dest));
+    if (!destNode) {
+        emit errorOccurred(tr("Unable to find '%1' node").arg(dest));
+        return;
+    }
+    GraphNodePort *outPort = sourceNode->outputPort(out);
+    if (!outPort) {
+        emit errorOccurred(tr("Unable to find '%1' port").arg(out));
+        return;
+    }
+    GraphNodePort *inPort = destNode->inputPort(in);
+    if (!inPort) {
+        emit errorOccurred(tr("Unable to find '%1' port").arg(in));
+        return;
+    }
+
+    GraphConnection *conn = new GraphConnection(outPort, inPort, name, this);
+    m_graphConnections[name] = conn;
+    connect(conn, &GraphConnection::errorOccurred, this, &GraphCore::errorOccurred);
+    emit graphChanged();
 }
 
 /**
@@ -117,7 +144,7 @@ void GraphCore::removeGraphConnection(const QString &name)
     }
     QObject *obj = it.value();
     m_graphConnections.erase(it);
-    emit graphConnectionsChanged();
+    emit graphChanged();
     obj->deleteLater();
 }
 
