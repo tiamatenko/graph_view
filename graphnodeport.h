@@ -25,4 +25,3 @@ private:
     const PortType m_portType;
     QVariant m_value;
 };
-
