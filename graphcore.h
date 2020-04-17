@@ -15,22 +15,22 @@ class GraphCore : public QObject
 public:
     explicit GraphCore(QObject *parent = nullptr);
 
-    Q_INVOKABLE void save() const;
-    Q_INVOKABLE void saveAs(const QString &fileName);
-    Q_INVOKABLE void load(const QString &fileName);
-
-    Q_INVOKABLE void addGraphObject(const QString &name);
-    Q_INVOKABLE void removeGraphObject(const QString &name);
-
-    Q_INVOKABLE void addGraphConnection(const QString &src, const QString &out, const QString &dest, const QString &in);
-    Q_INVOKABLE void removeGraphConnection(const QString &name);
-
     inline QString sourceFileName() const { return m_sourceFileName; }
     inline double zoomFactor() const { return m_zoomFactor; }
     inline QObjectList graphObjects() const { return m_graphObjects.values(); }
     inline QObjectList graphConnections() const { return m_graphConnections.values(); }
 
 public slots:
+    void save() const;
+    void saveAs(const QString &fileName);
+    void load(const QString &fileName);
+
+    void addGraphObject(const QString &name);
+    void removeGraphObject(const QString &name);
+
+    void addGraphConnection(const QString &src, const QString &out, const QString &dest, const QString &in);
+    void removeGraphConnection(const QString &name);
+
     void setZoomFactor(double zoomFactor);
 
 signals:
