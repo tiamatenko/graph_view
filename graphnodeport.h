@@ -4,6 +4,8 @@
 
 #include <QVariant>
 
+class GraphNode;
+
 class GraphNodePort : public GraphGenericObject
 {
     Q_OBJECT
@@ -14,12 +16,12 @@ public:
     enum PortType { OutputPort, InputPort };
     Q_ENUM(PortType)
 
-    explicit GraphNodePort(PortType portType, const QVariant &value, const QString &name, QObject *parent);
+    explicit GraphNodePort(PortType portType, const QVariant &value, const QString &name, GraphNode *parentNode);
 
     inline PortType portType() const { return m_portType; }
     inline QVariant value() const { return m_value; }
 
-signals:
+    GraphNode *node() const;
 
 private:
     const PortType m_portType;

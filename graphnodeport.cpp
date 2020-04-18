@@ -1,16 +1,13 @@
+#include "graphnode.h"
 #include "graphnodeport.h"
 
-GraphNodePort::GraphNodePort(PortType portType, const QVariant &value, const QString &name, QObject *parent)
+GraphNodePort::GraphNodePort(PortType portType, const QVariant &value, const QString &name, GraphNode *parent)
     : GraphGenericObject(name, parent)
     , m_portType(portType)
     , m_value(value)
 {
     switch (m_value.type()) {
     case QVariant::Int:
-    case QVariant::UInt:
-    case QVariant::LongLong:
-    case QVariant::ULongLong:
-    case QVariant::Char:
         m_color = Qt::red;
         break;
     case QVariant::Double:
@@ -23,4 +20,9 @@ GraphNodePort::GraphNodePort(PortType portType, const QVariant &value, const QSt
         m_color = Qt::gray;
         break;
     }
+}
+
+GraphNode *GraphNodePort::node() const
+{
+    return static_cast<GraphNode *>(parent());
 }

@@ -30,12 +30,12 @@ public slots:
     inline void setYCoord(double yCoord) { m_coord.setY(yCoord); }
 
     GraphNodePort *outputPort(const QString &portName) const;
-    void addOutputPort(const QString &portName, const QVariant &value);
-    void removeOutputPort(const QString &portName);
+    bool addOutputPort(const QString &portName, const QVariant &value);
+    bool removeOutputPort(const QString &portName);
 
     GraphNodePort *inputPort(const QString &portName) const;
-    void addInputPort(const QString &portName, const QVariant &value);
-    void removeInputPort(const QString &portName);
+    bool addInputPort(const QString &portName, const QVariant &value);
+    bool removeInputPort(const QString &portName);
 
 signals:
     void outputPortsChanged();
