@@ -28,16 +28,18 @@ public:
     inline QObjectList graphConnections() const { return m_graphConnections.values(); }
     inline double zoomFactor() const { return m_zoomFactor; }
 
+    GraphNode *findNode(const QString &name) const;
+
 public slots:
     void save();
     void saveAs(const QString &fileName);
     void load(const QString &fileName);
 
-    GraphNode *addGraphNode(const QString &name, const QPointF &coord);
-    void removeGraphNode(const QString &name);
+    bool addGraphNode(const QString &name, qreal x, qreal y);
+    bool removeGraphNode(const QString &name);
 
-    GraphConnection *addGraphConnection(const QString &src, const QString &out, const QString &dest, const QString &in);
-    void removeGraphConnection(const QString &name);
+    bool addGraphConnection(const QString &src, const QString &out, const QString &dest, const QString &in);
+    bool removeGraphConnection(const QString &name);
 
     void setZoomFactor(double zoomFactor);
 

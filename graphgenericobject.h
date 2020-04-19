@@ -6,8 +6,8 @@
 class GraphGenericObject : public QObject
 {
     Q_OBJECT
-    Q_PROPERTY(QString name READ name)
-    Q_PROPERTY(QColor color READ color)
+    Q_PROPERTY(QString name READ name CONSTANT)
+    Q_PROPERTY(QColor color READ color CONSTANT)
 public:
     explicit GraphGenericObject(const QString &name, QObject *parent);
 
