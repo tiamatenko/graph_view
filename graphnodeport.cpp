@@ -1,5 +1,7 @@
 #include "graphnode.h"
+
 #include "graphnodeport.h"
+#include "graphcore.h"
 
 GraphNodePort::GraphNodePort(PortType portType, const QVariant &value, const QString &name, GraphNode *parent)
     : GraphGenericObject(name, parent)
@@ -25,4 +27,14 @@ GraphNodePort::GraphNodePort(PortType portType, const QVariant &value, const QSt
 GraphNode *GraphNodePort::node() const
 {
     return static_cast<GraphNode *>(parent());
+}
+
+QString GraphNodePort::nodeName() const
+{
+    return node()->name();
+}
+
+bool GraphNodePort::isConnected() const
+{
+    return node()->graphCore()->hasConnection(this);
 }

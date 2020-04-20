@@ -6,6 +6,7 @@
 
 class GraphNode;
 class GraphConnection;
+class GraphNodePort;
 
 class GraphCore : public QObject
 {
@@ -29,6 +30,7 @@ public:
     inline double zoomFactor() const { return m_zoomFactor; }
 
     GraphNode *findNode(const QString &name) const;
+    bool hasConnection(const GraphNodePort *graphNodePort) const;
 
 public slots:
     void save();

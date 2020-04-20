@@ -12,6 +12,21 @@ Window {
     title: graphCore.sourceFileName
     property int highestZ: 0
     property real zoomFactor: 1.5
+    property var portCoords: ({})
+
+    signal graphChanged()
+
+    function updateConnections() {
+        if (active) {
+            graphChanged()
+            canvas.requestPaint()
+        }
+        else {
+            portCoords = {}
+        }
+    }
+
+    onActiveChanged: updateConnections()
 
     Component.onCompleted: zoomFactor = graphCore.zoomFactor
 
@@ -68,8 +83,8 @@ Window {
                     x = modelData.xCoord
                     y = modelData.yCoord
                 }
-                onXChanged: modelData.xCoord = x
-                onYChanged: modelData.yCoord = y
+                onXChanged: { modelData.xCoord = x; updateConnections() }
+                onYChanged: { modelData.yCoord = y; updateConnections() }
 
                 GridLayout {
                     anchors.fill: parent
@@ -90,7 +105,6 @@ Window {
                         Layout.preferredWidth: parent.width / 2
                         Layout.fillHeight: true
                         Layout.alignment: Qt.AlignLeft | Qt.AlignTop
-                        onWidthChanged: console.debug("Input " + width)
                         clip: true
                         spacing: 2
                         Repeater {
@@ -98,10 +112,22 @@ Window {
                             RowLayout {
                                 width: inputPortColumn.width
                                 Rectangle {
+                                    id: point
                                     color: modelData.color
                                     radius: height / 2
                                     Layout.fillHeight: true
                                     Layout.preferredWidth: height
+                                    Component.onCompleted: root.graphChanged.connect(saveCoords)
+
+                                    function saveCoords() {
+                                        if (modelData.isConnected) {
+                                            var pos = mapToItem(canvas, width / 2, height / 2)
+                                            root.portCoords[modelData.nodeName + modelData.name] = pos
+                                        }
+                                    }
+                                    MouseArea {
+                                        anchors.fill: parent
+                                    }
                                 }
                                 Text { text: modelData.name; clip: true; elide: Text.ElideRight; Layout.fillWidth: true }
                             }
@@ -112,7 +138,6 @@ Window {
                         Layout.preferredWidth: parent.width / 2
                         Layout.fillHeight: true
                         Layout.alignment: Qt.AlignRight | Qt.AlignTop
-                        onWidthChanged: console.debug("Output " + width)
                         clip: true
                         spacing: 2
                         Repeater {
@@ -126,6 +151,17 @@ Window {
                                     Layout.fillHeight: true
                                     Layout.preferredWidth: height
                                     Layout.alignment: Qt.AlignRight
+                                    Component.onCompleted: root.graphChanged.connect(saveCoords)
+
+                                    function saveCoords() {
+                                        if (modelData.isConnected) {
+                                            var pos = mapToItem(canvas, width / 2, height / 2)
+                                            root.portCoords[modelData.nodeName + modelData.name] = pos
+                                        }
+                                    }
+                                    MouseArea {
+                                        anchors.fill: parent
+                                    }
                                 }
                             }
                         }
@@ -151,14 +187,44 @@ Window {
                         MenuItem {
                             text: qsTr("Add Output Port...")
                             onTriggered: {
-                                var name = "NewPort"
-                                graphCore.addGraphNode(name, mouseArea.mouseX, mouseArea.mouseY)
+//                                var name = "NewPort"
+                                //graphCore.addGraphConnection(name, mouseArea.mouseX, mouseArea.mouseY)
                             }
                         }
                         MenuItem { text: qsTr("Add Intput Port...") }
                     }
                 }
             }
+        }
+    }
+
+    Canvas {
+        id: canvas
+        anchors.fill: parent
+        onPaint: {
+            var ctx = getContext("2d")
+            ctx.save()
+            ctx.clearRect(0, 0, canvas.width, canvas.height)
+            ctx.lineWidth = 2
+            for (var i = 0; i < graphCore.graphConnections.length; ++i) {
+                var conn = graphCore.graphConnections[i]
+                var id = conn.sourceNodeName + conn.outputPortName
+                var start = root.portCoords[id]
+                if (start === undefined)
+                    continue;
+                id = conn.targetNodeName + conn.inputPortName
+                var end = root.portCoords[id]
+                if (end === undefined)
+                    continue;
+                ctx.strokeStyle = conn.color
+                ctx.beginPath()
+                ctx.moveTo(start.x, start.y)
+                var center = Qt.point((start.x + end.x)/2, (start.y + end.y)/2)
+                ctx.quadraticCurveTo(center.x, start.y, center.x, center.y)
+                ctx.quadraticCurveTo(center.x, end.y, end.x, end.y)
+                ctx.stroke()
+            }
+            ctx.restore()
         }
     }
 

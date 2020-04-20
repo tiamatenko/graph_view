@@ -4,21 +4,27 @@
 
 #include <QPointer>
 
+class GraphCore;
 class GraphNodePort;
 
 class GraphConnection : public GraphGenericObject
 {
     Q_OBJECT
-    Q_PROPERTY(GraphNodePort *outputPort READ outputPort CONSTANT)
-    Q_PROPERTY(GraphNodePort *inputPort READ inputPort CONSTANT)
+    Q_PROPERTY(QString sourceNodeName READ sourceNodeName CONSTANT)
+    Q_PROPERTY(QString outputPortName READ outputPortName CONSTANT)
+    Q_PROPERTY(QString targetNodeName READ targetNodeName CONSTANT)
+    Q_PROPERTY(QString inputPortName READ inputPortName CONSTANT)
 
 public:
-    explicit GraphConnection(GraphNodePort *outPort, GraphNodePort *inPort, const QString &name, QObject *parent);
+    explicit GraphConnection(GraphNodePort *outPort, GraphNodePort *inPort, const QString &name, GraphCore *graphCore);
 
     GraphNodePort *outputPort() const;
     GraphNodePort *inputPort() const;
 
-signals:
+    QString sourceNodeName() const;
+    QString outputPortName() const;
+    QString targetNodeName() const;
+    QString inputPortName() const;
 
 private:
     QPointer<GraphNodePort> m_outputPort;

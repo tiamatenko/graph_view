@@ -32,6 +32,16 @@ GraphNode *GraphCore::findNode(const QString &name) const
     return static_cast<GraphNode *>(m_graphNodes.value(name));
 }
 
+bool GraphCore::hasConnection(const GraphNodePort *graphNodePort) const
+{
+    for (const auto c : m_graphConnections) {
+        GraphConnection *conn = static_cast<GraphConnection *>(c);
+        if (conn->inputPort() == graphNodePort || conn->outputPort() == graphNodePort)
+            return true;
+    }
+    return false;
+}
+
 /**
  * @brief GraphCore::save saves all objects to the source file
  */
@@ -122,6 +132,11 @@ bool GraphCore::removeGraphNode(const QString &name)
  */
 bool GraphCore::addGraphConnection(const QString &src, const QString &out, const QString &dest, const QString &in)
 {
+    if (src == dest) {
+        emit errorOccurred(tr("Source and target node cannot be the same: %1").arg(src));
+        return false;
+    }
+
     const QString name = QString(QLatin1String("%1.%2->%3.%4")).arg(src, out, dest, in);
     if (m_graphConnections.contains(name)) {
         emit errorOccurred(tr("Connection '%1' already exists").arg(name));

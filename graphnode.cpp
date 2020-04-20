@@ -1,10 +1,16 @@
 #include "graphnode.h"
 
+#include "graphcore.h"
 #include "graphnodeport.h"
 
-GraphNode::GraphNode(const QPointF &coord, const QString &name, QObject *parent)
-    : GraphGenericObject(name, parent), m_coord(coord)
+GraphNode::GraphNode(const QPointF &coord, const QString &name, GraphCore *graphCore)
+    : GraphGenericObject(name, graphCore), m_coord(coord)
 {
+}
+
+GraphCore *GraphNode::graphCore() const
+{
+    return static_cast<GraphCore *>(parent());
 }
 
 GraphNodePort *GraphNode::outputPort(const QString &portName) const
