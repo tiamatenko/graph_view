@@ -2,6 +2,7 @@ import QtQuick 2.12
 import QtQuick.Window 2.12
 import QtQuick.Controls 2.5
 import QtQuick.Layouts 1.12
+import QtQuick.Dialogs 1.3
 
 Window {
     id: root
@@ -31,6 +32,29 @@ Window {
     function deselect(node) {
         delete selectedNodes[node.name]
         node.border.color = "black"
+    }
+
+    function saveAs() {
+        fileDialog.selectExisting = false
+        fileDialog.open()
+    }
+    function open() {
+        fileDialog.selectExisting = true
+        fileDialog.open()
+    }
+
+    FileDialog {
+        id: fileDialog
+        title: "Please choose a file"
+        folder: shortcuts.home
+        nameFilters: [ "JSON files (*.JSON *.json)", "All files (*)"]
+        onAccepted: {
+            if (selectExisting)
+                graphCore.load(fileDialog.fileUrl)
+            else
+                graphCore.saveAs(fileDialog.fileUrl)
+        }
+//        Component.onCompleted: visible = true
     }
 
     signal graphChanged()
@@ -89,9 +113,23 @@ Window {
                         graphCore.addGraphNode(name, mouseArea.mouseX, mouseArea.mouseY)
                     }
                 }
-                MenuItem { text: qsTr("Save") }
-                MenuItem { text: qsTr("Save As...") }
-                MenuItem { text: qsTr("Open...") }
+                MenuItem {
+                    text: qsTr("Save")
+                    onTriggered: {
+                        if (graphCore.sourceFileName === "")
+                            saveAs()
+                        else
+                            graphCore.save()
+                    }
+                }
+                MenuItem {
+                    text: qsTr("Save As...")
+                    onTriggered: saveAs()
+                }
+                MenuItem {
+                    text: qsTr("Open...")
+                    onTriggered: open()
+                }
             }
         }
 
