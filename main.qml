@@ -11,7 +11,7 @@ Window {
     color: "black"
     title: graphCore.sourceFileName
     property int highestZ: 0
-    property real zoomFactor: 1.5
+    property real zoomFactor: 1
     property var portCoords: ({})
     property var selectedNodes: ({})
 
@@ -46,42 +46,54 @@ Window {
     }
 
     onActiveChanged: updateConnections()
+    onZoomFactorChanged: graphCore.zoomFactor = zoomFactor
 
     Component.onCompleted: zoomFactor = graphCore.zoomFactor
-
-    MouseArea {
-        id: mouseArea
-        anchors.fill: parent
-        acceptedButtons: Qt.LeftButton | Qt.RightButton
-        onClicked: {
-            if (mouse.button === Qt.RightButton)
-                contextMenu.popup()
-        }
-        onPressAndHold: {
-            if (mouse.source === Qt.MouseEventNotSynthesized)
-                contextMenu.popup()
-        }
-
-        Menu {
-            id: contextMenu
-            MenuItem {
-                text: qsTr("Add Node...")
-                onTriggered: {
-                    var name = "Something"
-                    graphCore.addGraphNode(name, mouseArea.mouseX, mouseArea.mouseY)
-                }
-            }
-            MenuItem { text: qsTr("Save") }
-            MenuItem { text: qsTr("Save As...") }
-            MenuItem { text: qsTr("Open...") }
-        }
-    }
 
     Flickable {
         id: flick
         anchors.fill: parent
         contentWidth: width * zoomFactor
         contentHeight: height * zoomFactor
+
+        onContentXChanged: updateConnections()
+        onContentYChanged: updateConnections()
+
+        MouseArea {
+            id: mouseArea
+            anchors.fill: parent
+            acceptedButtons: Qt.LeftButton | Qt.RightButton
+            onClicked: {
+                if (mouse.button === Qt.RightButton)
+                    contextMenu.popup()
+            }
+            onPressAndHold: {
+                if (mouse.source === Qt.MouseEventNotSynthesized)
+                    contextMenu.popup()
+            }
+            onWheel: {
+                if (wheel.modifiers & Qt.ControlModifier) {
+                    zoomFactor += zoomFactor * wheel.angleDelta.y / 1200
+                    wheel.accepted = true
+                } else {
+                    wheel.accepted = false
+                }
+            }
+
+            Menu {
+                id: contextMenu
+                MenuItem {
+                    text: qsTr("Add Node...")
+                    onTriggered: {
+                        var name = "Something"
+                        graphCore.addGraphNode(name, mouseArea.mouseX, mouseArea.mouseY)
+                    }
+                }
+                MenuItem { text: qsTr("Save") }
+                MenuItem { text: qsTr("Save As...") }
+                MenuItem { text: qsTr("Open...") }
+            }
+        }
 
         Repeater {
             model: graphCore.graphNodes
@@ -91,6 +103,7 @@ Window {
                 width: 250
                 height: 300
                 radius: 5
+                scale: zoomFactor
                 Behavior on scale { NumberAnimation { duration: 200 } }
                 color: "lightgray"
                 border.color: "black"
@@ -104,6 +117,7 @@ Window {
                 }
                 onXChanged: { modelData.xCoord = x; updateConnections() }
                 onYChanged: { modelData.yCoord = y; updateConnections() }
+                onScaleChanged: updateConnections()
 
                 GridLayout {
                     anchors.fill: parent
