@@ -116,10 +116,10 @@ Window {
                 MenuItem {
                     text: qsTr("Save")
                     onTriggered: {
-                        if (graphCore.sourceFileName === "")
-                            saveAs()
-                        else
+                        if (graphCore.sourceFileName.length > 0)
                             graphCore.save()
+                        else
+                            graphCore.saveAs()
                     }
                 }
                 MenuItem {
