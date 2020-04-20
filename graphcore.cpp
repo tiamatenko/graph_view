@@ -23,7 +23,6 @@
  */
 GraphCore::GraphCore(QObject *parent)
     : QObject(parent)
-    , m_sourceFileName(tr("<Empty>"))
 {
 }
 
@@ -54,14 +53,14 @@ void GraphCore::save()
  * @brief GraphCore::saveAs saves all objects to a new file
  * @param fileName new file name
  */
-void GraphCore::saveAs(const QString &fileName)
+void GraphCore::saveAs(const QUrl &fileName)
 {
-    if (!saveTo(sourceFileName()))
+    if (!saveTo(fileName))
         return;
 
     if (sourceFileName() != fileName) {
         m_sourceFileName = fileName;
-        emit sourceFileNameChanged(m_sourceFileName);
+        emit sourceFileNameChanged();
     }
 }
 
@@ -69,16 +68,41 @@ void GraphCore::saveAs(const QString &fileName)
  * @brief GraphCore::load loads data from file
  * @param fileName a file name
  */
-void GraphCore::load(const QString &fileName)
+void GraphCore::load(const QUrl &fileName)
 {
     if (!loadFrom(fileName))
         return;
 
     if (sourceFileName() != fileName) {
         m_sourceFileName = fileName;
-        emit sourceFileNameChanged(m_sourceFileName);
+        emit sourceFileNameChanged();
     }
-    emit graphChanged();
+    emit graphNodesChanged();
+    emit graphConnectionsChanged();
+    emit zoomFactorChanged();
+}
+
+void GraphCore::clear()
+{
+    for (auto conn : m_graphConnections)
+        conn->deleteLater();
+
+    for (auto node : m_graphNodes) {
+        static_cast<GraphNode *>(node)->clearPorts();
+        node->deleteLater();
+    }
+
+    m_graphConnections.clear();
+    emit graphConnectionsChanged();
+
+    m_graphNodes.clear();
+    emit graphNodesChanged();
+
+    m_sourceFileName = QString();
+    emit sourceFileNameChanged();
+
+    m_zoomFactor = 1.0;
+    emit zoomFactorChanged();
 }
 
 /**
@@ -98,10 +122,8 @@ bool GraphCore::addGraphNode(const QString &name, qreal x, qreal y)
     GraphNode *node = new GraphNode(QPointF(x, y), name, this);
     m_graphNodes[name] = node;
 
-    connect(node, &GraphNode::outputPortsChanged, this, &GraphCore::graphChanged);
-    connect(node, &GraphNode::inputPortsChanged, this, &GraphCore::graphChanged);
     connect(node, &GraphNode::errorOccurred, this, &GraphCore::errorOccurred);
-    emit graphChanged();
+    emit graphNodesChanged();
     return true;
 }
 
@@ -118,7 +140,7 @@ bool GraphCore::removeGraphNode(const QString &name)
     }
     QObject *node = it.value();
     m_graphNodes.erase(it);
-    emit graphChanged();
+    emit graphNodesChanged();
     node->deleteLater();
     return true;
 }
@@ -166,7 +188,7 @@ bool GraphCore::addGraphConnection(const QString &src, const QString &out, const
     GraphConnection *conn = new GraphConnection(outPort, inPort, name, this);
     m_graphConnections[name] = conn;
     connect(conn, &GraphConnection::errorOccurred, this, &GraphCore::errorOccurred);
-    emit graphChanged();
+    emit graphConnectionsChanged();
     return true;
 }
 
@@ -183,7 +205,7 @@ bool GraphCore::removeGraphConnection(const QString &name)
     }
     QObject *obj = it.value();
     m_graphConnections.erase(it);
-    emit graphChanged();
+    emit graphConnectionsChanged();
     obj->deleteLater();
     return true;
 }
@@ -206,11 +228,11 @@ void GraphCore::setZoomFactor(double zoomFactor)
  * @param fileName file name
  * @return result of saving
  */
-bool GraphCore::saveTo(const QString &fileName)
+bool GraphCore::saveTo(const QUrl &fileName)
 {
-    QFile outputFile(fileName);
+    QFile outputFile(fileName.path());
     if (!outputFile.open(QFile::WriteOnly | QFile::Truncate)) {
-        emit errorOccurred(tr("Unable to open file '%1'").arg(fileName));
+        emit errorOccurred(tr("Unable to open file '%1': %2").arg(fileName.path(), outputFile.errorString()));
         return false;
     }
 
@@ -265,11 +287,11 @@ bool GraphCore::saveTo(const QString &fileName)
     return true;
 }
 
-bool GraphCore::loadFrom(const QString &fileName)
+bool GraphCore::loadFrom(const QUrl &fileName)
 {
-    QFile inputFile(fileName);
+    QFile inputFile(fileName.path());
     if (!inputFile.open(QFile::ReadOnly | QFile::Text)) {
-        emit errorOccurred(tr("Unable to open file '%1'").arg(fileName));
+        emit errorOccurred(tr("Unable to open file '%1': %2").arg(fileName.path(), inputFile.errorString()));
         return false;
     }
 
@@ -283,20 +305,13 @@ bool GraphCore::loadFrom(const QString &fileName)
 
     QJsonObject sceneObject = doc.object();
     if (sceneObject.isEmpty()) {
-        emit errorOccurred(tr("File '%1' does not contain proper data").arg(fileName));
+        emit errorOccurred(tr("File '%1' does not contain proper data").arg(fileName.path()));
         return false;
     }
 
+    clear();
 
-    for (auto conn : m_graphConnections)
-        conn->deleteLater();
-    m_graphConnections.clear();
-
-    for (auto node : m_graphNodes)
-        node->deleteLater();
-    m_graphNodes.clear();
-
-    m_zoomFactor = sceneObject.value(getKey(JsonKeyID::ZoomFactor)).toInt(1.0);
+    m_zoomFactor = sceneObject.value(getKey(JsonKeyID::ZoomFactor)).toDouble(1.0);
 
     QSignalBlocker block(this);
     const QJsonArray nodes = sceneObject.value(getKey(JsonKeyID::Nodes)).toArray();
@@ -334,9 +349,9 @@ bool GraphCore::loadFrom(const QString &fileName)
                     val = str;
             }
             if (portType == GraphNodePort::OutputPort)
-                graphNode->addOutputPort(name, value);
+                graphNode->addOutputPort(name, val);
             else
-                graphNode->addInputPort(name, value);
+                graphNode->addInputPort(name, val);
         }
     }
 

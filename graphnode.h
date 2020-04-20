@@ -28,6 +28,8 @@ public:
     inline QObjectList outputPorts() const { return m_outputPorts.values(); }
     inline QObjectList inputPorts() const { return m_inputPorts.values(); }
 
+    void clearPorts();
+
 public slots:
     inline void setXCoord(double xCoord) { m_coord.setX(xCoord); }
     inline void setYCoord(double yCoord) { m_coord.setY(yCoord); }

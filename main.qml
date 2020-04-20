@@ -10,9 +10,9 @@ Window {
     width: 1024
     height: 600
     color: "black"
-    title: graphCore.sourceFileName
+    title: graphCore.sourceFileName === undefined ? qsTr("<EMPTY>") : graphCore.sourceFileName
     property int highestZ: 0
-    property real zoomFactor: 1
+    property real zoomFactor: graphCore.zoomFactor
     property var portCoords: ({})
     property var selectedNodes: ({})
 
@@ -54,7 +54,12 @@ Window {
             else
                 graphCore.saveAs(fileDialog.fileUrl)
         }
-//        Component.onCompleted: visible = true
+    }
+
+    MessageDialog {
+        id: errorBox
+        title: "Error occurred"
+        icon: StandardIcon.Warning
     }
 
     signal graphChanged()
@@ -69,10 +74,23 @@ Window {
         }
     }
 
+    function clearConnections() {
+        portCoords = {}
+        updateConnections()
+    }
+
+    function showError(error) {
+        errorBox.title = error
+        errorBox.open()
+    }
+
     onActiveChanged: updateConnections()
     onZoomFactorChanged: graphCore.zoomFactor = zoomFactor
 
-    Component.onCompleted: zoomFactor = graphCore.zoomFactor
+    Component.onCompleted: {
+        graphCore.errorOccurred.connect(showError)
+        graphCore.graphConnectionsChanged.connect(clearConnections)
+    }
 
     Flickable {
         id: flick
@@ -119,7 +137,7 @@ Window {
                         if (graphCore.sourceFileName.length > 0)
                             graphCore.save()
                         else
-                            graphCore.saveAs()
+                            saveAs()
                     }
                 }
                 MenuItem {
@@ -129,6 +147,10 @@ Window {
                 MenuItem {
                     text: qsTr("Open...")
                     onTriggered: open()
+                }
+                MenuItem {
+                    text: qsTr("Clear")
+                    onTriggered: graphCore.clear()
                 }
             }
         }
@@ -189,7 +211,7 @@ Window {
                                     Layout.fillHeight: true
                                     Layout.preferredWidth: height
                                     Component.onCompleted: root.graphChanged.connect(saveCoords)
-
+                                    Component.onDestruction: root.graphChanged.disconnect(saveCoords)
                                     function saveCoords() {
                                         if (modelData.isConnected) {
                                             var pos = mapToItem(canvas, width / 2, height / 2)
@@ -223,7 +245,7 @@ Window {
                                     Layout.preferredWidth: height
                                     Layout.alignment: Qt.AlignRight
                                     Component.onCompleted: root.graphChanged.connect(saveCoords)
-
+                                    Component.onDestruction: root.graphChanged.disconnect(saveCoords)
                                     function saveCoords() {
                                         if (modelData.isConnected) {
                                             var pos = mapToItem(canvas, width / 2, height / 2)

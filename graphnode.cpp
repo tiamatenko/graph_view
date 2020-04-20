@@ -13,6 +13,19 @@ GraphCore *GraphNode::graphCore() const
     return static_cast<GraphCore *>(parent());
 }
 
+void GraphNode::clearPorts()
+{
+    for (auto port : m_outputPorts)
+        port->deleteLater();
+    m_outputPorts.clear();
+    emit outputPortsChanged();
+
+    for (auto port : m_inputPorts)
+        port->deleteLater();
+    m_inputPorts.clear();
+    emit inputPortsChanged();
+}
+
 GraphNodePort *GraphNode::outputPort(const QString &portName) const
 {
     return qobject_cast<GraphNodePort *>(m_outputPorts.value(portName));
