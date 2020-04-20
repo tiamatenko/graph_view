@@ -13,6 +13,25 @@ Window {
     property int highestZ: 0
     property real zoomFactor: 1.5
     property var portCoords: ({})
+    property var selectedNodes: ({})
+
+    function select(node, exclusive) {
+        if (exclusive) {
+            for (var nodeName in selectedNodes) {
+                if (nodeName !== node.name) {
+                    var n = selectedNodes[nodeName]
+                    n.border.color = "black"
+                }
+            }
+            selectedNodes = {}
+        }
+        selectedNodes[node.name] = node
+        node.border.color = "red"
+    }
+    function deselect(node) {
+        delete selectedNodes[node.name]
+        node.border.color = "black"
+    }
 
     signal graphChanged()
 
@@ -68,13 +87,13 @@ Window {
             model: graphCore.graphNodes
             Rectangle {
                 id: graphNode
-                property bool setected: false
+                property string name: modelData.name
                 width: 250
                 height: 300
                 radius: 5
                 Behavior on scale { NumberAnimation { duration: 200 } }
                 color: "lightgray"
-                border.color: setected ? "red" : "black"
+                border.color: "black"
                 border.width: 5
                 smooth: true
                 antialiasing: true
@@ -93,7 +112,7 @@ Window {
                     rows: 2
                     columnSpacing: 0
                     Text {
-                        text: modelData.name
+                        text: graphNode.name
                         font.bold: true
                         font.pointSize: 12
                         Layout.columnSpan: 2
@@ -176,10 +195,18 @@ Window {
                     scrollGestureEnabled: false  // 2-finger-flick gesture should pass through to the Flickable
                     onPressed: {
                         graphNode.z = ++root.highestZ;
-                        if (mouse.button === Qt.RightButton)
+                        if (mouse.button === Qt.RightButton) {
                             nodeMenu.popup()
-                        else
-                            parent.setected = !parent.setected
+                        } else {
+                            if (mouse.modifiers & Qt.ControlModifier) {
+                                if (selectedNodes[graphNode.name] !== undefined)
+                                    deselect(graphNode)
+                                else
+                                    select(graphNode, false)
+                            } else {
+                                select(graphNode, true)
+                            }
+                        }
                     }
 
                     Menu {
