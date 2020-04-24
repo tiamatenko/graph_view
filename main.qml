@@ -204,22 +204,49 @@ Window {
                             model: modelData.inputPorts
                             RowLayout {
                                 width: inputPortColumn.width
-                                Rectangle {
-                                    id: point
-                                    color: modelData.color
-                                    radius: height / 2
+                                DropArea {
+                                    id: inDropArea
                                     Layout.fillHeight: true
                                     Layout.preferredWidth: height
-                                    Component.onCompleted: root.graphChanged.connect(saveCoords)
-                                    Component.onDestruction: root.graphChanged.disconnect(saveCoords)
-                                    function saveCoords() {
-                                        if (modelData.isConnected) {
-                                            var pos = mapToItem(canvas, width / 2, height / 2)
-                                            root.portCoords[modelData.nodeName + modelData.name] = pos
-                                        }
+                                    keys: [ "out_" + modelData.color ]
+                                    onDropped: {
+                                        graphCore.addGraphConnection(draggedPoint.nodeName, draggedPoint.portName,
+                                                                     graphNode.name, modelData.name)
+                                        updateConnections()
                                     }
-                                    MouseArea {
+                                    Rectangle {
+                                        id: inPoint
                                         anchors.fill: parent
+                                        color: inDropArea.containsDrag ? Qt.darker(modelData.color, 1.8) : modelData.color
+                                        scale: inDropArea.containsDrag ? 1.1 : 1
+                                        radius: height / 2
+                                        Component.onCompleted: root.graphChanged.connect(saveCoords)
+                                        Component.onDestruction: root.graphChanged.disconnect(saveCoords)
+                                        function saveCoords() {
+                                            if (modelData.isConnected) {
+                                                var pos = mapToItem(canvas, width / 2, height / 2)
+                                                root.portCoords[modelData.nodeName + modelData.name] = pos
+                                            }
+                                        }
+                                        MouseArea {
+                                            anchors.fill: parent
+                                            hoverEnabled: true
+                                            onEntered: {
+                                                var pos = mapToItem(flick, width/2, height/2)
+                                                draggedPoint.x = pos.x - draggedPoint.width/2
+                                                draggedPoint.y = pos.y - draggedPoint.height/2
+                                                draggedPoint.z = highestZ
+                                                draggedPoint.nodeName = graphNode.name
+                                                draggedPoint.portName = modelData.name
+                                                draggedPoint.portType = "in_"
+                                                draggedPoint.color = modelData.color
+                                                draggedPoint.visible = true
+                                            }
+                                            onExited: {
+                                                if (!draggedPoint.dragged)
+                                                    draggedPoint.visible = false
+                                            }
+                                        }
                                     }
                                 }
                                 Text { text: modelData.name; clip: true; elide: Text.ElideRight; Layout.fillWidth: true }
@@ -238,22 +265,50 @@ Window {
                             RowLayout {
                                 width: outputPortColumn.width
                                 Text { text: modelData.name; clip: true; elide: Text.ElideRight; horizontalAlignment: Qt.AlignRight; Layout.fillWidth: true }
-                                Rectangle {
-                                    color: modelData.color
-                                    radius: height / 2
+                                DropArea {
+                                    id: outDropArea
                                     Layout.fillHeight: true
                                     Layout.preferredWidth: height
                                     Layout.alignment: Qt.AlignRight
-                                    Component.onCompleted: root.graphChanged.connect(saveCoords)
-                                    Component.onDestruction: root.graphChanged.disconnect(saveCoords)
-                                    function saveCoords() {
-                                        if (modelData.isConnected) {
-                                            var pos = mapToItem(canvas, width / 2, height / 2)
-                                            root.portCoords[modelData.nodeName + modelData.name] = pos
-                                        }
+                                    keys: [ "in_" + modelData.color ]
+                                    onDropped: {
+                                        graphCore.addGraphConnection(graphNode.name, modelData.name,
+                                                                     draggedPoint.nodeName, draggedPoint.portName)
+                                        updateConnections()
                                     }
-                                    MouseArea {
+                                    Rectangle {
+                                        id: outPoint
                                         anchors.fill: parent
+                                        color: outDropArea.containsDrag ? Qt.darker(modelData.color, 1.8) : modelData.color
+                                        scale: outDropArea.containsDrag ? 1.1 : 1
+                                        radius: height / 2
+                                        Component.onCompleted: root.graphChanged.connect(saveCoords)
+                                        Component.onDestruction: root.graphChanged.disconnect(saveCoords)
+                                        function saveCoords() {
+                                            if (modelData.isConnected) {
+                                                var pos = mapToItem(canvas, width / 2, height / 2)
+                                                root.portCoords[modelData.nodeName + modelData.name] = pos
+                                            }
+                                        }
+                                        MouseArea {
+                                            anchors.fill: parent
+                                            hoverEnabled: true
+                                            onEntered: {
+                                                var pos = mapToItem(flick, width/2, height/2)
+                                                draggedPoint.x = pos.x - draggedPoint.width/2
+                                                draggedPoint.y = pos.y - draggedPoint.height/2
+                                                draggedPoint.z = highestZ
+                                                draggedPoint.nodeName = graphNode.name
+                                                draggedPoint.portName = modelData.name
+                                                draggedPoint.portType = "out_"
+                                                draggedPoint.color = modelData.color
+                                                draggedPoint.visible = true
+                                            }
+                                            onExited: {
+                                                if (!draggedPoint.dragged)
+                                                    draggedPoint.visible = false
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -288,7 +343,7 @@ Window {
                         MenuItem {
                             text: qsTr("Add Output Port...")
                             onTriggered: {
-//                                var name = "NewPort"
+                                //                                var name = "NewPort"
                                 //graphCore.addGraphConnection(name, mouseArea.mouseX, mouseArea.mouseY)
                             }
                         }
@@ -297,11 +352,55 @@ Window {
                 }
             }
         }
+
+        Rectangle {
+            id: draggedPoint
+            property alias dragged: mi.pressed
+            property var sourcePos
+            property string nodeName
+            property string portName
+            property string portType
+            width: 16
+            height: width
+            radius: width / 2
+            visible: false
+            onVisibleChanged: sourcePos = (visible ? Qt.point(x + width/2, y + height/2) : undefined)
+            onXChanged: canvas.requestPaint()
+            onYChanged: canvas.requestPaint()
+
+            Drag.keys: [ portType + color ]
+            Drag.active: mi.drag.active
+            Drag.hotSpot.x: width / 2
+            Drag.hotSpot.y: height / 2
+            Drag.onDragFinished: console.log("onDragFinished")
+
+            MouseArea {
+                id: mi
+                anchors.fill: parent
+                drag.target: draggedPoint
+                acceptedButtons: Qt.LeftButton
+                scrollGestureEnabled: false
+                onReleased: {
+                    if (draggedPoint.Drag.target !== null)
+                        draggedPoint.Drag.drop()
+                    draggedPoint.visible = false
+                    canvas.requestPaint()
+                }
+            }
+        }
     }
 
     Canvas {
         id: canvas
         anchors.fill: parent
+        function paintCurve(ctx, start, end) {
+            ctx.beginPath()
+            ctx.moveTo(start.x, start.y)
+            var center = Qt.point((start.x + end.x)/2, (start.y + end.y)/2)
+            ctx.quadraticCurveTo(center.x, start.y, center.x, center.y)
+            ctx.quadraticCurveTo(center.x, end.y, end.x, end.y)
+            ctx.stroke()
+        }
         onPaint: {
             var ctx = getContext("2d")
             ctx.save()
@@ -318,12 +417,12 @@ Window {
                 if (end === undefined)
                     continue;
                 ctx.strokeStyle = conn.color
-                ctx.beginPath()
-                ctx.moveTo(start.x, start.y)
-                var center = Qt.point((start.x + end.x)/2, (start.y + end.y)/2)
-                ctx.quadraticCurveTo(center.x, start.y, center.x, center.y)
-                ctx.quadraticCurveTo(center.x, end.y, end.x, end.y)
-                ctx.stroke()
+                paintCurve(ctx, start, end)
+            }
+            if (draggedPoint.dragged) {
+                ctx.strokeStyle = draggedPoint.color
+                paintCurve(ctx, draggedPoint.sourcePos, Qt.point(draggedPoint.x + draggedPoint.width/2,
+                                                                 draggedPoint.y + draggedPoint.height/2))
             }
             ctx.restore()
         }

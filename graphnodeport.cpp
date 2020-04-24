@@ -3,14 +3,11 @@
 #include "graphnodeport.h"
 #include "graphcore.h"
 
-#include <QDebug>
-
 GraphNodePort::GraphNodePort(PortType portType, const QVariant &value, const QString &name, GraphNode *parent)
     : GraphGenericObject(name, parent)
     , m_portType(portType)
     , m_value(value)
 {
-    qDebug() << m_value.type();
     switch (m_value.type()) {
     case QVariant::Int:
         m_color = Qt::red;
