@@ -98,9 +98,6 @@ Window {
         contentWidth: width * zoomFactor
         contentHeight: height * zoomFactor
 
-        onContentXChanged: updateConnections()
-        onContentYChanged: updateConnections()
-
         MouseArea {
             id: mouseArea
             anchors.fill: parent
@@ -364,6 +361,7 @@ Window {
             height: width
             radius: width / 2
             visible: false
+            scale: zoomFactor
             onVisibleChanged: sourcePos = (visible ? Qt.point(x + width/2, y + height/2) : undefined)
             onXChanged: canvas.requestPaint()
             onYChanged: canvas.requestPaint()
@@ -372,7 +370,6 @@ Window {
             Drag.active: mi.drag.active
             Drag.hotSpot.x: width / 2
             Drag.hotSpot.y: height / 2
-            Drag.onDragFinished: console.log("onDragFinished")
 
             MouseArea {
                 id: mi
@@ -388,43 +385,44 @@ Window {
                 }
             }
         }
-    }
 
-    Canvas {
-        id: canvas
-        anchors.fill: parent
-        function paintCurve(ctx, start, end) {
-            ctx.beginPath()
-            ctx.moveTo(start.x, start.y)
-            var center = Qt.point((start.x + end.x)/2, (start.y + end.y)/2)
-            ctx.quadraticCurveTo(center.x, start.y, center.x, center.y)
-            ctx.quadraticCurveTo(center.x, end.y, end.x, end.y)
-            ctx.stroke()
-        }
-        onPaint: {
-            var ctx = getContext("2d")
-            ctx.save()
-            ctx.clearRect(0, 0, canvas.width, canvas.height)
-            ctx.lineWidth = 2
-            for (var i = 0; i < graphCore.graphConnections.length; ++i) {
-                var conn = graphCore.graphConnections[i]
-                var id = conn.sourceNodeName + conn.outputPortName
-                var start = root.portCoords[id]
-                if (start === undefined)
-                    continue;
-                id = conn.targetNodeName + conn.inputPortName
-                var end = root.portCoords[id]
-                if (end === undefined)
-                    continue;
-                ctx.strokeStyle = conn.color
-                paintCurve(ctx, start, end)
+        Canvas {
+            id: canvas
+            anchors.fill: parent
+            z: highestZ
+            function paintCurve(ctx, start, end) {
+                ctx.beginPath()
+                ctx.moveTo(start.x, start.y)
+                var center = Qt.point((start.x + end.x)/2, (start.y + end.y)/2)
+                ctx.quadraticCurveTo(center.x, start.y, center.x, center.y)
+                ctx.quadraticCurveTo(center.x, end.y, end.x, end.y)
+                ctx.stroke()
             }
-            if (draggedPoint.dragged) {
-                ctx.strokeStyle = draggedPoint.color
-                paintCurve(ctx, draggedPoint.sourcePos, Qt.point(draggedPoint.x + draggedPoint.width/2,
-                                                                 draggedPoint.y + draggedPoint.height/2))
+            onPaint: {
+                var ctx = getContext("2d")
+                ctx.save()
+                ctx.clearRect(0, 0, canvas.width, canvas.height)
+                ctx.lineWidth = 2
+                for (var i = 0; i < graphCore.graphConnections.length; ++i) {
+                    var conn = graphCore.graphConnections[i]
+                    var id = conn.sourceNodeName + conn.outputPortName
+                    var start = root.portCoords[id]
+                    if (start === undefined)
+                        continue;
+                    id = conn.targetNodeName + conn.inputPortName
+                    var end = root.portCoords[id]
+                    if (end === undefined)
+                        continue;
+                    ctx.strokeStyle = conn.color
+                    paintCurve(ctx, start, end)
+                }
+                if (draggedPoint.dragged) {
+                    ctx.strokeStyle = draggedPoint.color
+                    paintCurve(ctx, draggedPoint.sourcePos, Qt.point(draggedPoint.x + draggedPoint.width/2,
+                                                                     draggedPoint.y + draggedPoint.height/2))
+                }
+                ctx.restore()
             }
-            ctx.restore()
         }
     }
 
